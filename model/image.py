@@ -43,7 +43,7 @@ class VisionTransformer(nn.Module):
     def forward(self, x: torch.Tensor):
         #图像块嵌入
         # [卸载逻辑] Vision Conv1
-        if self.offload_handler and self.offload_handler.should_offload('vision_conv', encoder_type='visual'):
+        if self.offload_handler and self.offload_handler.should_offload('vision_conv'):
             x = self.offload_handler.call_remote(
                 endpoint='vision_conv',
                 data_dict={'x': x},
@@ -88,7 +88,7 @@ class VisionTransformer(nn.Module):
 
         if self.proj is not None:
             # [卸载逻辑] Visual Projection
-            if self.offload_handler and self.offload_handler.should_offload('visual_proj', encoder_type='visual'):
+            if self.offload_handler and self.offload_handler.should_offload('vision_proj'):
                 x = self.offload_handler.call_remote(
                     endpoint='visual_projection',
                     data_dict={'x': x},

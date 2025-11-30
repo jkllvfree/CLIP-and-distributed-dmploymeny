@@ -21,6 +21,7 @@ def read_image_from_url(url):
         print(f"从URL读取图片失败: {e}")
         return None
 
+#predict,需要修改，本地测速的时候读取本地，与后端对接时候读取url
 def predict(model, image_paths: List[str], class_names: List[str]):
     prompts = ['a photo of a ' + class_name for class_name in class_names]
     tokenized_prompts = m.tokenize(prompts).to(torch.device('cuda'))

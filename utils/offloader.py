@@ -14,12 +14,12 @@ class OffloadHandler:
         self.config = config
         self.logger = logger or logging.getLogger('client')
 
-    def should_offload(self, module_type: str, layer_id: int = None, encoder_type: str = 'visual') -> bool:
+    def should_offload(self, module_type: str, layer_id: int = None, ) -> bool:
         """
         判断当前模块是否需要卸载到服务器。
         例如: module_type='attn', encoder_type='visual'
         """
-        key = f"{encoder_type}_{module_type}"  # e.g. "visual_attn"
+        key = module_type  # e.g. "visual_attn"
         return self.config.get(key, False)
 
     def call_remote(self, endpoint: str, data_dict: dict, device: torch.device):

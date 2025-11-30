@@ -2,7 +2,7 @@ import time
 
 import numpy as np
 from packaging import version
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, Dict
 
 import torch
 from PIL import Image
@@ -154,7 +154,7 @@ class CLIP(nn.Module):
         x = x[torch.arange(x.shape[0]), text.argmax(dim=-1)]
 
         # [卸载逻辑] Text Projection
-        if self.offload_handler and self.offload_handler.should_offload('text_proj', encoder_type='text'):
+        if self.offload_handler and self.offload_handler.should_offload('text_proj'):
             x = self.offload_handler.call_remote(
                 endpoint='text_projection',
                 data_dict={'x': x},
@@ -176,7 +176,7 @@ class CLIP(nn.Module):
 
     def forward(self, image, text):
         # [卸载逻辑] 全量模型卸载
-        if self.offload_handler and self.offload_handler.should_offload('complete_encoders', encoder_type='all'):
+        if self.offload_handler and self.offload_handler.should_offload('complete_encoders'):
             result = self.offload_handler.call_remote(
                 endpoint='complete_encoders',
                 data_dict={'image': image, 'text': text},
@@ -211,7 +211,7 @@ class CLIP(nn.Module):
         logit_scale = self.logit_scale.exp()
 
         # [卸载逻辑] Cosine Similarity
-        if self.offload_handler and self.offload_handler.should_offload('cos_sim', encoder_type='all'):
+        if self.offload_handler and self.offload_handler.should_offload('cos_sim'):
             logits_per_image = self.offload_handler.call_remote(
                 endpoint='cos_sim',
                 data_dict={
@@ -313,40 +313,40 @@ def build_model(state_dict: dict, offload_handler=None):
     return model.eval()
 
 
-# def extract_model_components(model: CLIP) -> Dict:
-#     """
-#     【Server端专用】
-#     将完整的 CLIP 模型对象拆解为零部件字典。
-#     Server 启动时调用此函数初始化全局组件库。
-#     """
-#     components = {
-#         'visual_attns': [],
-#         'visual_mlps': [],
-#         'text_attns': [],
-#         'text_mlps': [],
-#         'visual_conv': None,
-#         'visual_proj': None,
-#         'text_proj': model.text_projection,
-#         'visual_blocks': None,  # 块级
-#         'text_blocks': model.transformer.resblocks  # 块级
-#     }
-#
-#     # 1. 提取 Vision 部分 (假设是 ViT)
-#     if isinstance(model.visual, VisionTransformer):
-#         components['visual_conv'] = model.visual.conv1
-#         components['visual_proj'] = model.visual.proj
-#         components['visual_blocks'] = model.visual.transformer.resblocks
-#
-#         for block in model.visual.transformer.resblocks:
-#             components['visual_attns'].append(block.attn)
-#             components['visual_mlps'].append(block.mlp)
-#
-#     # 2. 提取 Text 部分
-#     for block in model.transformer.resblocks:
-#         components['text_attns'].append(block.attn)
-#         components['text_mlps'].append(block.mlp)
-#
-#     return components
+def extract_model_components(model: CLIP) -> Dict:
+    """
+    【Server端专用】
+    将完整的 CLIP 模型对象拆解为零部件字典。
+    Server 启动时调用此函数初始化全局组件库。
+    """
+    components = {
+        'visual_attns': [],
+        'visual_mlps': [],
+        'text_attns': [],
+        'text_mlps': [],
+        'visual_conv': None,
+        'visual_proj': None,
+        'text_proj': model.text_projection,
+        'visual_blocks': None,  # 块级
+        'text_blocks': model.transformer.resblocks  # 块级
+    }
+
+    # 1. 提取 Vision 部分 (假设是 ViT)
+    if isinstance(model.visual, VisionTransformer):
+        components['visual_conv'] = model.visual.conv1
+        components['visual_proj'] = model.visual.proj
+        components['visual_blocks'] = model.visual.transformer.resblocks
+
+        for block in model.visual.transformer.resblocks:
+            components['visual_attns'].append(block.attn)
+            components['visual_mlps'].append(block.mlp)
+
+    # 2. 提取 Text 部分
+    for block in model.transformer.resblocks:
+        components['text_attns'].append(block.attn)
+        components['text_mlps'].append(block.mlp)
+
+    return components
 
 
 def _convert_image_to_rgb(image):

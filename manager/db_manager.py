@@ -42,7 +42,7 @@ def execute_insert(query, params=None, logger=None):
         cursor.executemany(query, params)
         conn.commit()
         if logger:
-            logger.info(f"[BackgroundTask] 上传匹配任务成功：插入 {len(params)} 条记录")
+            logger.info(f"[BackgroundTask] 成功插入 {len(params)} 条记录")
     except Exception as e:
         conn.rollback()
         if logger:

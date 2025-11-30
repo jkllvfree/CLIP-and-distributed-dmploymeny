@@ -33,7 +33,7 @@ class Transformer(nn.Module):
 
     def forward(self, x: torch.Tensor):
         # [卸载逻辑] 整个 ResBlocks 块级卸载 (中粒度)
-        if self.offload_handler and self.offload_handler.should_offload('resblocks', encoder_type=self.encoder_type):
+        if self.offload_handler and self.offload_handler.should_offload('text_encoder'):
             return self.offload_handler.call_remote(
                 endpoint='encoder_blocks',
                 data_dict={
